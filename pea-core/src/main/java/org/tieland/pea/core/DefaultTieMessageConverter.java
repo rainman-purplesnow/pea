@@ -45,15 +45,11 @@ public class DefaultTieMessageConverter implements TieMessageConverter {
 
     @Override
     public void writeContext(TieMessage message, TieMessageContext context) throws ConverterException {
-
         if(message == null){
             throw new ConverterException(" message must not null ");
         }
 
         try {
-
-            //FIXME
-            context.setMessageId(message.getId());
             String body = JSONObject.toJSONString(message.getPayload());
             context.setBody(body);
         }catch (Exception ex){

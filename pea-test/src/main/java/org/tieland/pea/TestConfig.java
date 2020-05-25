@@ -3,9 +3,10 @@ package org.tieland.pea;
 import org.redisson.TieRedisson;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.tieland.pea.core.DefaultTieMessageContainer;
 import org.tieland.pea.core.TieDelayQueue;
-import org.tieland.pea.spring.starter.PeaConfig;
-import org.tieland.pea.spring.starter.TieMessageContainer;
+import org.tieland.pea.core.TieMessageContainer;
+import org.tieland.pea.spring.starter.ConfigUtils;
 
 /**
  * @author zhouxiang
@@ -23,8 +24,8 @@ public class TestConfig {
             initMethod = "start",
             destroyMethod = "stop"
     )
-    public TieMessageContainer tieMessageContainer(TieDelayQueue tieDelayQueue, TieDelayTask<TestVO> testDelayTask, PeaConfig config){
-        return new TieMessageContainer(tieDelayQueue, testDelayTask, config);
+    public TieMessageContainer tieMessageContainer(TieDelayQueue tieDelayQueue, TestDelayTask<TestVO> testDelayTask, ConfigUtils configUtils){
+        return new DefaultTieMessageContainer<>(tieDelayQueue, testDelayTask, configUtils.get(tieDelayQueue.group()));
     }
 
 

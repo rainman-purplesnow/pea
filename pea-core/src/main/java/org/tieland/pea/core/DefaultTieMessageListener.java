@@ -26,6 +26,8 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
 
     private ThreadPoolExecutor threadPoolExecutor;
 
+    private TieMessageListenerAsyncStarter asyncStarter;
+
     public DefaultTieMessageListener(TieDelayQueue delayQueue, DelayTask<T> delayTask, DelayConfig config){
         this(delayQueue, delayTask, config, new ThreadPoolExecutor(config.getConcurrent(), config.getConcurrent(),
                 1, TimeUnit.HOURS, new LinkedBlockingQueue<>(100)));
@@ -45,8 +47,8 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
     @Override
     public void listen() {
         String threadName = "TieMessageListener-"+System.identityHashCode(this);
-        TieMessageListenerAsyncStarter aysncStarter = new TieMessageListenerAsyncStarter(threadName);
-        aysncStarter.start();
+        asyncStarter = new TieMessageListenerAsyncStarter(threadName);
+        asyncStarter.start();
         log.debug(" TieMessageListener is starting. ");
     }
 
@@ -58,10 +60,22 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
     }
 
     /**
-     * 异步停止（优雅停止）
+     * 优雅停止
      */
     public void stop() {
         running = false;
+        if(config.getTaskTimeoutSeconds()>0){
+            try {
+                TimeUnit.SECONDS.sleep(config.getTaskTimeoutSeconds());
+            } catch (InterruptedException e) {
+                log.error("", e);
+            }
+
+            //触发interrupt
+            if(asyncStarter.isAlive()){
+                asyncStarter.interrupt();
+            }
+        }
     }
 
     /**
@@ -101,7 +115,7 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
 
         /**
          * 实际执行delayTask
-         * @param context
+         * @param context TieMessage上下文
          */
         private void execute(TieMessageContext context){
             boolean release = true;
@@ -112,18 +126,17 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
 
                 //具备执行timeout
                 if(config.getTaskTimeoutSeconds()>0){
-                    Mono.fromRunnable(()->{
-                        delayTask.execute(message.getPayload());
-                    }).timeout(Duration.ofSeconds(config.getTaskTimeoutSeconds())).subscribe();
+                    Mono.fromRunnable(()->
+                        delayTask.execute(message.getPayload())
+                    ).timeout(Duration.ofSeconds(config.getTaskTimeoutSeconds())).subscribe();
                 }else{
-                    Mono.fromRunnable(()->{
-                        delayTask.execute(message.getPayload());
-                    }).timeout(Duration.ofSeconds(DelayConfig.DEFAULT_TASK_TIMEOUT_SECONDS)).subscribe();
+                    Mono.fromRunnable(()->
+                        delayTask.execute(message.getPayload())
+                    ).subscribe();
                 }
             } catch (ConverterException ex){
                 release = false;
                 log.error(" message converter error. context:{} ", context, ex);
-                return;
             } catch (Exception ex){
                 release = true;
                 log.error(" delay task error. context:{} ", context, ex);

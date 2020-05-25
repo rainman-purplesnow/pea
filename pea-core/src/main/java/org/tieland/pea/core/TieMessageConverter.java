@@ -9,16 +9,16 @@ public interface TieMessageConverter {
     /**
      * 从MessageContext提取转换TieMessage
      * @param context
+     * @param <T>
      * @return
      * @throws ConverterException
      */
-    TieMessage fromContext(TieMessageContext context) throws ConverterException;
+    <T> TieMessage<T> fromContext(TieMessageContext context) throws ConverterException;
 
     /**
      * TieMessage写入MessageContext
      * @param message
      * @param context
-     * @param <T>
      * @throws ConverterException
      */
     void writeContext(TieMessage message, TieMessageContext context) throws ConverterException;

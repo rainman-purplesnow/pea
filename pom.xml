@@ -72,7 +72,6 @@
 
   <modules>
     <module>pea-core</module>
-    <module>pea-common</module>
     <module>pea-monitor</module>
     <module>pea-spring-boot-starter</module>
     <module>pea-test</module>

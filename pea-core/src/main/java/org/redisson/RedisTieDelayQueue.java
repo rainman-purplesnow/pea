@@ -26,7 +26,6 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
     private final String channelName;
     private final String timeoutZSetName;
     private final String dataSetName;
-    private final String processSetName;
     private final String expiredQueueName;
     private final RBlockingQueue<TieMessageContext> expiredQueue;
 
@@ -41,7 +40,6 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
         this.channelName = prefixName(prefix+":"+"delay_queue_channel", group);
         this.dataSetName = prefixName(prefix+":"+"delay_data_set", group);
         this.expiredQueueName = prefixName(prefix+":"+"delay_queue", group);
-        this.processSetName = prefixName(prefix+":"+"delay_process_set", group);
         this.timeoutZSetName = prefixName(prefix+":"+"delay_queue_timeout", group);
         this.expiredQueue = new RedissonBlockingQueue(codec, commandExecutor, expiredQueueName, redisson);
 
@@ -56,7 +54,6 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
                                     + "for i, v in ipairs(expiredValues) do "
                                         + "local value = redis.call('hget', KEYS[3], v);"
                                         + "local randomId, message = struct.unpack('dLc0', value);"
-                                        + "redis.call('sadd', KEYS[4], v);"
                                         + "redis.call('rpush', KEYS[1], message);"
                                         + "redis.call('hdel', KEYS[3], v);"
                                     + "end; "
@@ -67,7 +64,7 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
                                     + "return v[2]; "
                                 + "end "
                                 + "return nil;",
-                        Arrays.<Object>asList(expiredQueueName, timeoutZSetName, dataSetName, processSetName),
+                        Arrays.<Object>asList(expiredQueueName, timeoutZSetName, dataSetName),
                         System.currentTimeMillis(), 100);
             }
 
@@ -157,6 +154,11 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
         return size() == 0;
     }
 
+    @Override
+    public void release(TieMessageContext context) throws InterruptedException {
+        //
+    }
+
     /**
      * 异步统计size
      * @return
@@ -165,36 +167,4 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
         return commandExecutor.readAsync(getName(), codec, RedisCommands.HLEN, dataSetName);
     }
 
-    @Override
-    public void release(TieMessageContext context) throws InterruptedException {
-        get(releaseAsync(context));
-    }
-
-    /**
-     * 异步释放process
-     * @param context
-     * @return
-     */
-    private RFuture<Void> releaseAsync(TieMessageContext context){
-        return commandExecutor.evalWriteAsync(getName(), codec, RedisCommands.EVAL_VOID,
-                        "redis.call('srem', KEYS[1], ARGV[1]);",
-                Arrays.<Object>asList(processSetName), context.getMessageId());
-    }
-
-    @Override
-    public void retry(TieMessageContext context) throws InterruptedException {
-        get(retryAsync(context));
-    }
-
-    /**
-     * 异步重试
-     * @param context
-     * @return
-     */
-    private RFuture<Void> retryAsync(TieMessageContext context) {
-        return commandExecutor.evalWriteAsync(getName(), codec, RedisCommands.EVAL_VOID,
-                "redis.call('sadd', KEYS[1], ARGV[2]);"
-                        + "redis.call('rpush', KEYS[2], ARGV[1]);",
-                Arrays.<Object>asList(processSetName, expiredQueueName), encode(context), context.getMessageId());
-    }
 }

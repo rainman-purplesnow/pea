@@ -1,5 +1,6 @@
 package org.tieland.pea.spring.starter;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.redisson.Redisson;
 import org.redisson.TieRedisson;
 import org.redisson.api.RedissonClient;
@@ -10,8 +11,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.tieland.pea.core.*;
-
+import org.tieland.pea.core.util.Tuple2;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author zhouxiang
@@ -34,10 +37,22 @@ public class PeaAutoConfiguration {
     }
 
     @Bean
-    public TieMessageDispatcher tieMessageDispatcher(List<TieDelayQueue> delayQueueList){
-        DefaultTieMessageDispatcher dispatcher = new DefaultTieMessageDispatcher(delayQueueList);
-        dispatcher.init();
-        return dispatcher;
+    public ConfigUtils configUtils(PeaConfig peaConfig){
+        if(peaConfig == null || CollectionUtils.isEmpty(peaConfig.getGroups())){
+            throw new ConfigException("PeaConfig not correct");
+        }
+
+        return new ConfigUtils(peaConfig);
+    }
+
+    @Bean
+    public TieMessageDispatcher tieMessageDispatcher(List<TieDelayQueue> delayQueueList, ConfigUtils configUtils){
+        Map<String, Tuple2<TieDelayQueue, DelayConfig>> delayQueueTupleMap = new ConcurrentHashMap<>(delayQueueList.size());
+        delayQueueList.stream().forEach(tieDelayQueue -> {
+            DelayConfig delayConfig = configUtils.get(tieDelayQueue.group());
+            delayQueueTupleMap.put(tieDelayQueue.group(), new Tuple2<>(tieDelayQueue, delayConfig));
+        });
+        return new DefaultTieMessageDispatcher(delayQueueList, delayQueueTupleMap);
     }
 
 }

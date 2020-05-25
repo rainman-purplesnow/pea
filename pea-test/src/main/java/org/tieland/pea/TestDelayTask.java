@@ -3,7 +3,6 @@ package org.tieland.pea;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.tieland.pea.core.TieDelayTask;
-import org.tieland.pea.core.TieMessage;
 
 /**
  * @author zhouxiang
@@ -11,11 +10,11 @@ import org.tieland.pea.core.TieMessage;
  */
 @Slf4j
 @Component
-public class TieDelayTask<TestVO> extends TieDelayTask<TestVO> {
+public class TestDelayTask<TestVO> extends TieDelayTask<TestVO> {
 
     @Override
-    protected TaskResult handle(TieMessage<TestVO> message) {
-        log.info("message:{}", message);
+    protected TaskResult handle(TestVO payload) {
+        log.info("payload:{}", payload);
         return TaskResult.SUCCEED;
     }
 }

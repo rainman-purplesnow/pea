@@ -56,11 +56,4 @@ public interface TieDelayQueue {
      */
     void release(TieMessageContext context) throws InterruptedException;
 
-    /**
-     * 重试
-     * @param context
-     * @throws InterruptedException
-     */
-    void retry(TieMessageContext context) throws InterruptedException;
-
 }

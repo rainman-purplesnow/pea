@@ -3,17 +3,25 @@ package org.tieland.pea.core;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 延迟业务Task
+ * <p>延迟业务Task</p>
+ * <p>template模式</p>
  * @author zhouxiang
  * @date 2020/5/20 10:13
  */
 @Slf4j
 public abstract class DelayTask<T> {
 
+    /**
+     * task业务处理结果enum
+     */
     public enum TaskResult {
         SUCCEED, FAILED
     }
 
+    /**
+     * 定义业务逻辑处理流程
+     * @param payload
+     */
     public final void execute(T payload){
 
         TaskResult taskResult;
@@ -28,6 +36,11 @@ public abstract class DelayTask<T> {
             return;
         }
 
+        if(taskResult == null){
+            log.debug(" the TaskResult is null. ");
+            return;
+        }
+
         if(TaskResult.SUCCEED == taskResult){
             succeed(payload);
             log.debug(" do succeed. ");
@@ -38,6 +51,7 @@ public abstract class DelayTask<T> {
             failed(payload);
             log.debug(" do failed. ");
         }
+
     }
 
     /**

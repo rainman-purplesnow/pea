@@ -21,6 +21,6 @@ public class TieMessageContext {
 
     private String body;
 
-    private String corn;
+    private String group;
 
 }
