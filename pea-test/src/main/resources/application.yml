@@ -13,4 +13,4 @@ config:
     pea:
       groups:
         - name: 11
-          corn: 11
+          retriesOnError: 1

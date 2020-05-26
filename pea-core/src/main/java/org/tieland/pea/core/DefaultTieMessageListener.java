@@ -2,7 +2,12 @@ package org.tieland.pea.core;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoSink;
+import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
+
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -73,7 +78,13 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
 
             //触发interrupt
             if(asyncStarter.isAlive()){
+                log.debug(" ThreadPoolExecutor start shutdown. ");
+                threadPoolExecutor.shutdown();
+                log.debug(" ThreadPoolExecutor already shutdown. ");
+
+                log.debug(" TieMessageListenerAsyncStarter stopping. ");
                 asyncStarter.interrupt();
+                log.debug(" TieMessageListenerAsyncStarter is stopped. ");
             }
         }
     }
@@ -119,21 +130,37 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
          */
         private void execute(TieMessageContext context){
             boolean release = true;
+            Thread worker = Thread.currentThread();
 
             try{
                 TieMessage<T> message = messageConverter.fromContext(context);
                 log.debug("message:{}", message);
 
+                Mono<Void> mono = Mono.defer(()->Mono.fromRunnable(()->{
+                    log.debug(" delay task execute start ");
+                    delayTask.execute(message.getPayload());
+                    log.debug(" delay task execute end ");
+                }));
+
                 //具备执行timeout
                 if(config.getTaskTimeoutSeconds()>0){
-                    Mono.fromRunnable(()->
-                        delayTask.execute(message.getPayload())
-                    ).timeout(Duration.ofSeconds(config.getTaskTimeoutSeconds())).subscribe();
-                }else{
-                    Mono.fromRunnable(()->
-                        delayTask.execute(message.getPayload())
-                    ).subscribe();
+                    mono = mono.timeout(Duration.ofSeconds(config.getTaskTimeoutSeconds()), Mono.error(new TimeoutException("DelayTask execute timeout")))
+                                .doOnError(throwable -> {
+                                    if(throwable instanceof  TimeoutException){
+                                        log.debug(" delay task interrupt start ");
+                                        delayTask.interrupt(TaskContextHolder.get(worker));
+                                        log.debug(" delay task interrupt end ");
+                                    }
+                                });
                 }
+
+                if(config.getRetriesOnError()>0){
+                    mono = mono.retry(config.getRetriesOnError());
+                }
+
+                mono.doOnError(error->
+                    log.error("context:{}", context, error)
+                ).subscribe();
             } catch (ConverterException ex){
                 release = false;
                 log.error(" message converter error. context:{} ", context, ex);
@@ -151,6 +178,8 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
                         log.error(" delay queue release error. context:{} ", context, ex);
                     }
                 }
+
+                TaskContextHolder.clear(worker);
             }
         }
     }

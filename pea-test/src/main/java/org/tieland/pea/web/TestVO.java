@@ -1,4 +1,4 @@
-package org.tieland.pea;
+package org.tieland.pea.web;
 
 import lombok.Data;
 

@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.tieland.pea.TestVO;
 import org.tieland.pea.core.DefaultTieMessage;
 import org.tieland.pea.core.TieMessageContainer;
 import org.tieland.pea.core.TieMessageDispatcher;

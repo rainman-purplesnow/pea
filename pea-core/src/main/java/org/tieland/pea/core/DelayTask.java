@@ -22,7 +22,7 @@ public abstract class DelayTask<T> {
      * 定义业务逻辑处理流程
      * @param payload
      */
-    public final void execute(T payload){
+    public final void execute(T payload) {
 
         TaskResult taskResult;
 
@@ -33,7 +33,7 @@ public abstract class DelayTask<T> {
         }catch (Exception ex){
             log.error(" handle occur exception. payload:{} ", payload, ex);
             error(payload, ex);
-            return;
+            throw new TaskException(ex);
         }
 
         if(taskResult == null){
@@ -58,8 +58,9 @@ public abstract class DelayTask<T> {
      * 实际业务处理逻辑
      * @param payload
      * @return
+     * @throws Exception
      */
-    protected abstract TaskResult handle(T payload);
+    protected abstract TaskResult handle(T payload) throws Exception;
 
     /**
      * 业务处理成功之后
@@ -79,4 +80,10 @@ public abstract class DelayTask<T> {
      * @param ex
      */
     protected abstract void error(T payload, Exception ex);
+
+    /**
+     * 执行超时后interrupt
+     * @param taskContext
+     */
+    protected abstract void interrupt(TaskContext<T> taskContext);
 }

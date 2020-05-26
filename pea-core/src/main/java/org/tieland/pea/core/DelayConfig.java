@@ -31,6 +31,11 @@ public class DelayConfig {
     public static final int DEFAULT_LISTENER_DELAY_SECONDS = 10;
 
     /**
+     * 默认发生error时重试次数
+     */
+    public static final int DEFAULT_RETRIES_ON_ERROR = 0;
+
+    /**
      * Task并发度，并行处理延迟消息的能力
      */
     private int concurrent = DEFAULT_CONCURRENT;
@@ -49,5 +54,10 @@ public class DelayConfig {
      * 延迟Task 中心超时时间
      */
     private int taskTimeoutSeconds = DEFAULT_TASK_TIMEOUT_SECONDS;
+
+    /**
+     * 发生error时重试次数
+     */
+    private int retriesOnError = DEFAULT_RETRIES_ON_ERROR;
 
 }

@@ -7,6 +7,7 @@ import org.tieland.pea.core.DefaultTieMessageContainer;
 import org.tieland.pea.core.TieDelayQueue;
 import org.tieland.pea.core.TieMessageContainer;
 import org.tieland.pea.spring.starter.ConfigUtils;
+import org.tieland.pea.web.TestVO;
 
 /**
  * @author zhouxiang
@@ -24,7 +25,7 @@ public class TestConfig {
             initMethod = "start",
             destroyMethod = "stop"
     )
-    public TieMessageContainer tieMessageContainer(TieDelayQueue tieDelayQueue, TestDelayTask<TestVO> testDelayTask, ConfigUtils configUtils){
+    public TieMessageContainer tieMessageContainer(TieDelayQueue tieDelayQueue, TestDelayTask testDelayTask, ConfigUtils configUtils){
         return new DefaultTieMessageContainer<>(tieDelayQueue, testDelayTask, configUtils.get(tieDelayQueue.group()));
     }
 

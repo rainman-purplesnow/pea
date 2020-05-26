@@ -31,4 +31,12 @@ public abstract class TieDelayTask<T> extends DelayTask<T> {
     @Override
     protected void error(T payload, Exception ex) {
     }
+
+    /**
+     * 默认业务处理超时interrupt
+     */
+    @Override
+    protected void interrupt(TaskContext taskContext){
+        //
+    }
 }

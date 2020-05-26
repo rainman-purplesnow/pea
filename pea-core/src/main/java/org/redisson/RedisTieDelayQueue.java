@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue {
 
-    public static final String DEAULT_PREFIX = "org:tieland:pea";
+    public static final String DEFAULT_PREFIX = "org:tieland:pea";
     private final String group;
     private final QueueTransferService queueTransferService;
     private final String channelName;
@@ -30,7 +30,7 @@ public class RedisTieDelayQueue extends RedissonObject implements TieDelayQueue 
     private final RBlockingQueue<TieMessageContext> expiredQueue;
 
     public RedisTieDelayQueue(Redisson redisson, QueueTransferService queueTransferService, Codec codec, String group){
-        this(redisson, queueTransferService, codec, group, DEAULT_PREFIX);
+        this(redisson, queueTransferService, codec, group, DEFAULT_PREFIX);
     }
 
     public RedisTieDelayQueue(Redisson redisson, QueueTransferService queueTransferService, Codec codec,
