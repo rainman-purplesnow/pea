@@ -54,6 +54,7 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
         String threadName = "TieMessageListener-"+System.identityHashCode(this);
         asyncStarter = new TieMessageListenerAsyncStarter(threadName);
         asyncStarter.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(()->stop()));
         log.debug(" TieMessageListener is starting. ");
     }
 
@@ -69,24 +70,18 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
      */
     public void stop() {
         running = false;
-        if(config.getTaskTimeoutSeconds()>0){
-            try {
-                TimeUnit.SECONDS.sleep(config.getTaskTimeoutSeconds());
-            } catch (InterruptedException e) {
-                log.error("", e);
-            }
 
-            //触发interrupt
-            if(asyncStarter.isAlive()){
-                log.debug(" ThreadPoolExecutor start shutdown. ");
-                threadPoolExecutor.shutdown();
-                log.debug(" ThreadPoolExecutor already shutdown. ");
-
-                log.debug(" TieMessageListenerAsyncStarter stopping. ");
-                asyncStarter.interrupt();
-                log.debug(" TieMessageListenerAsyncStarter is stopped. ");
-            }
+        try {
+            log.debug(" TieMessageListenerAsyncStarter stopping. ");
+            asyncStarter.join();
+            log.debug(" TieMessageListenerAsyncStarter is stopped. ");
+        } catch (InterruptedException e) {
+            log.error("", e);
         }
+
+        log.debug(" ThreadPoolExecutor start shutdown. ");
+        threadPoolExecutor.shutdown();
+        log.debug(" ThreadPoolExecutor already shutdown. ");
     }
 
     /**
@@ -179,6 +174,7 @@ public class DefaultTieMessageListener<T> implements TieMessageListener {
                     }
                 }
 
+                //释放
                 TaskContextHolder.clear(worker);
             }
         }
